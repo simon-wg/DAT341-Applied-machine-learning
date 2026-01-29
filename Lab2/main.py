@@ -152,3 +152,28 @@ plt.show()
 # - What happens with the training time as the ensemble size grows?
 #
 # The training time increases linearly with the size of the ensemble as the ensemble size grows.
+
+# %%
+dv = pipeline.steps[1][1]
+gbc = pipeline.steps[2][1]
+
+feature_names = dv.feature_names_
+importances = gbc.feature_importances_
+
+# Pairs feature names with their importances and sort them in descending order
+sorted_importances = sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True)
+for feature, importance in sorted_importances:
+    print(f"{feature}: {importance:.4f}")
+
+# %% [markdown]
+# - Reasoning about the top importances
+# Our top three scores are marital status (married-civ-spouse), capital gain and education. It makes sense that marriage is a factor since you are more likely to be
+# older and also, most people would probably not get married if they lack economic resources. Capital gain makes sense since it is essentially "spending money to make money"
+# meaning that you need to have money to get a capital which you may gain from. Education makes sense since jobs that require a higher education typically have higher salaries.
+#
+# - Alternative way of calculating feature importance#
+#
+# First, train the model as usual and calculate the accuracy on the test set. Then for each feature, randomly shuffle its values in the test set and calculate the accuracy again.
+# If the accuracy drops significantly, it probably means that the feature is important for the model's predictions.
+#
+
