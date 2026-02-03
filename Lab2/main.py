@@ -1,5 +1,9 @@
 # %% [markdown]
 # # Programming assignment 2: Random forests
+# Group members:
+# - Isac Snecker
+# - Isak Söderlind
+# - Simon Westlin Green
 
 # %% [markdown]
 # ## Task 1: Working with a dataset with categorical features
@@ -10,7 +14,6 @@
 # %%
 
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction import DictVectorizer
 
@@ -88,7 +91,6 @@ print(f"{pipeline.__class__.__name__}: {accuracy:.4f}")
 # ### Step 1: Underfitting and overfitting in decision tree classifiers
 
 # %%
-import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
 
 accuracies = {}
@@ -103,6 +105,8 @@ plt.plot(list(accuracies.keys()), list(accuracies.values()))
 
 # %% [markdown]
 # ### Step 2: Underfitting and overfitting in random forest classifiers
+
+# %%
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 import time

@@ -1,6 +1,18 @@
-# %%
-from this import s
+# %% [markdown]
+# # PA1 ML workflow and decision tree
+#
+# ### Group members:
+#
+# - Isac Snecker
+# - Isak Söderlind
+# - Simon Westlin Green
+#
 
+# %% [markdown]
+# # Task 1: A classification example: fetal heart condition diagnosis
+#
+
+# %%
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -52,6 +64,8 @@ Y = data_shuffled["NSP"].apply(to_label)
 
 # Partition the data into training and test sets.
 Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.2, random_state=0)
+X.head()
+
 
 # %%
 from sklearn.dummy import DummyClassifier
@@ -61,6 +75,7 @@ clf = DummyClassifier(strategy="most_frequent")
 from sklearn.model_selection import cross_val_score
 
 cross_val_score(clf, Xtrain, Ytrain)
+
 
 # %%
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
@@ -77,18 +92,35 @@ for classifier in (
     DecisionTreeClassifier,
 ):
     clf = classifier()
-    print(f"{clf} {cross_val_score(clf, Xtrain, Ytrain)}")
+    scores = cross_val_score(clf, Xtrain, Ytrain)
+    print(f"{clf} Scores: {scores} Mean: {scores.mean()}")
+
+# Testing some hyperparameters for GradientBoostingClassifier
+for n_estimators in [50, 100, 200]:
+    for max_depth in [3, 5, 10]:
+        clf = GradientBoostingClassifier(n_estimators=n_estimators, max_depth=max_depth)
+        scores = cross_val_score(clf, Xtrain, Ytrain)
+        print(
+            f"GradientBoostingClassifier(n_estimators={n_estimators}, max_depth={max_depth}) Scores: {scores} Mean: {scores.mean()}"
+        )
 
 
 # %% [markdown]
 # Highest mean are GradientBoostingClassifier, RandomForestClassifier and DecisionTreeClassifier
+#
 # GradientBoostingClassifier: [0.94117647 0.96470588 0.94411765 0.94411765 0.95294118]
-# RandomForestClassifier:     [0.93529412 0.95294118 0.93529412 0.93235294 0.94411765]
-# DecisionTreeClassifier:     [0.90588235 0.94117647 0.91176471 0.9        0.94411765]
+#
+# RandomForestClassifier: [0.93529412 0.95294118 0.93529412 0.93235294 0.94411765]
+#
+# DecisionTreeClassifier: [0.90588235 0.94117647 0.91176471 0.9 0.94411765]
+#
+# We tried to tune some hyperparameters for GradientBoostingClassifier and got the best mean with n_estimators=100 and max_depth=5
+# Due to the risk of overfitting with increasing n_estimators and depth however, we chose to not use them.
+# The differences were small enough to be possibly attributed to random chance, varying between [0.945, 0.95]
+# Since this interval overlaps with some values of the default parameters, we chose to use the default.
 
 
 # %%
-
 from sklearn.metrics import accuracy_score
 
 clf = GradientBoostingClassifier()
@@ -97,9 +129,19 @@ Yguess = clf.predict(Xtest)
 
 print("Accuracy: ", accuracy_score(Ytest, Yguess))
 
+
 # %% [markdown]
-# The given accuracy for GradientBoostingClassifier is: 0.92967746
-# Gradient Boosting Classifier is an ensamble model, which uses a collection of multiple decision trees.
+# The selected model Gradient Boosting Classifier is an ensamble model. This means it uses a collection of multiple decision trees.
+# It works by building several decision trees during training and combining their outputs to make a final prediction.
+#
+# The given accuracy for GradientBoostingClassifier is: 0.92957746
+#
+# Our method of selecting the model was to try multiple different classifiers and compare their cross-validation scores. The one with the highest mean score was selected.
+#
+
+# %% [markdown]
+# # Task 2: Decision trees for classification
+#
 
 
 # %%
@@ -422,7 +464,16 @@ print(f"Best depth: {best_depth} with mean score {best:.4f}")
 
 # %% [markdown]
 # The best depth is 13 with a mean score of 0.9171
+# We check the accuracy score of this depth on the test set.
 
+# %%
+clf = TreeClassifier(max_depth=13)
+clf.fit(Xtrain, Ytrain)
+Yguess = clf.predict(Xtest)
+print("Accuracy: ", accuracy_score(Ytest, Yguess))
+
+# %% [markdown]
+# The accuracy on the test set when using a depth of 13 is approximately 0.8732.
 
 # %%
 clf = TreeClassifier(max_depth=3)
@@ -432,7 +483,8 @@ graph
 
 
 # %% [markdown]
-# Hemnet data
+# # Task 3: A regression example: predicting property prices
+#
 
 # %%
 import numpy as np
@@ -466,6 +518,8 @@ selected_columns = [
     "Operating Fee (kr/year)",
 ]
 alldata = alldata[selected_columns]
+
+# NOTE This had to be added because we have some non-numeric values in the Fee column.
 alldata["Fee (kr/month)"] = (
     alldata["Fee (kr/month)"]
     .astype(str)
@@ -485,6 +539,7 @@ Y = alldata_shuffled["Final Price (kr)"].apply(np.log)
 
 # Split into training and test sets.
 Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.2, random_state=0)
+
 
 # %%
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
@@ -513,9 +568,13 @@ for classifier in classifiers:
 
 # %% [markdown]
 # The RandomForestRegressor performs the best with nmse around -0.148.
+#
 # The GradientBoosting performs around -0.158.
-# We therefore use RandomForestRegressor for further evaluation.
-
+#
+# All of the models we tried were: LinearRegression, Ridge, Lasso, DecisionTreeRegressor and MLPRegressor. The MPLRegressor by far performed worst.
+#
+# Because it had the lowest score we use RandomForestRegressor for further evaluation.
+#
 
 # %%
 from sklearn.ensemble import RandomForestRegressor
@@ -525,5 +584,7 @@ regr = RandomForestRegressor()
 regr.fit(Xtrain, Ytrain)
 mean_squared_error(Ytest, regr.predict(Xtest))
 
+
 # %% [markdown]
-# Our final mse is around 0.136
+# Our final mse is around 0.13449
+#
