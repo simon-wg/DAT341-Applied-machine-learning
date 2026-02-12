@@ -1,9 +1,12 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
-from sklearn.svm import SVC, LinearSVC
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
 
 LOCATION_OF_CROWDSOURCED = "./crowdsourced_train.csv"
 LOCATION_OF_GOLD = "./gold_train.csv"
@@ -56,11 +59,32 @@ Xtrain_gold, ytrain_gold = df_gold["text"], df_gold["sentiment"]
 # We ran cross_val_score on HistGradientBoosting, RandomForest, Perceptron, LinearSVC, and DecisionTree.
 # LinearSVC performed the best, so we will use it for our final model. It had a score of 0.563
 
-pipeline = make_pipeline(TfidfVectorizer(ngram_range=(1, 2)), LinearSVC(dual="auto"))
-print(cross_val_score(pipeline, Xtrain_cs, ytrain_cs, n_jobs=-1).mean())
-
+print("TESTING NGRAM RANGES")
+for i in range(1, 4):
+    for j in range(i, 4):
+        print(f"Evaluating ngram_range=({i}, {j})...")
+        pipeline = make_pipeline(
+            TfidfVectorizer(ngram_range=(i, j)), LinearSVC(dual="auto")
+        )
+        print(cross_val_score(pipeline, Xtrain_cs, ytrain_cs, n_jobs=-1).mean())
 # Tuning ngram_range, we found that (1, 2) performed the best. We will use this for our final model. It had a score of 0.57.
 # We also tried setting class_weight="balanced" in LinearSVC, but it did not improve performance.
+print("TESTING CLASS WEIGHTS AND LOSS")
+for weight in [None, "balanced"]:
+    for loss in ["hinge", "squared_hinge"]:
+        print(f"Evaluating class_weight={weight}, loss={loss}...")
+        pipeline = make_pipeline(
+            TfidfVectorizer(),
+            LinearSVC(dual="auto", class_weight=weight, loss=loss),
+        )
+        print(cross_val_score(pipeline, Xtrain_cs, ytrain_cs, n_jobs=-1).mean())
+# The hinge loss function performed better than squared hinge, and changing class weights worsened performance.
+# We will use the default class weights and hinge loss for our final model.
+
+pipeline = make_pipeline(
+    TfidfVectorizer(ngram_range=(1, 2)),
+    LinearSVC(dual="auto", class_weight=None),
+)
 
 pipeline.fit(Xtrain_cs, ytrain_cs)
 score = pipeline.score(Xtest, ytest)
@@ -73,3 +97,16 @@ print(f"Accuracy: {score:.4f}")
 ypred = pipeline.predict(Xtest)
 print(classification_report(ytest, ypred))
 print(confusion_matrix(ytest, ypred))
+
+feature_names = pipeline[0].get_feature_names_out()
+
+coefficients = pipeline[1].coef_[0]
+
+importance_df = pd.DataFrame({"word": feature_names, "coefficient": coefficients})
+
+top_positive = importance_df.sort_values(by="coefficient", ascending=True).head(10)
+
+top_negative = importance_df.sort_values(by="coefficient", ascending=False).head(10)
+
+print("Top words for Positive Class:\n", top_positive)
+print("\nTop words for Negative Class:\n", top_negative)
