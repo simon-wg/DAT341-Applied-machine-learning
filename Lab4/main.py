@@ -151,7 +151,7 @@ class Perceptron(LinearClassifier):
                 score = np.dot(x, self.w_)
                 if y * score < 1:
                     # Update with both regularization and the gradient of the loss
-                    self.w_ = (1 - eta * lam) * self.w_ + (eta * y * x)
+                    self.w_ = (1 - eta * lam) * self.w_ + (eta * y) * x
                 else:
                     # Update with only regularization
                     self.w_ = (1 - eta * lam) * self.w_
@@ -203,8 +203,9 @@ for i in range(1, 40):
 print(f"Highest accuracy: {highest_score:.4f} with n_iter={highest_iter}")
 
 # %% [markdown]
-
-# The highest accuracy we got was 0.8326 with n_iter=15
+# For implementation of the algorithm, we copied it basically line for line from the clarification document.
+# We chose to set the lambda parameter to 1/n_samples, based on suggestions from the lab pm.
+# After implementing the algorithm from the clarification document the highest accuracy we got was 0.8326 with n_iter=15
 # Additionally, when manually settings the lambda parameter to 1e-4, we got an accuracy of 0.8352 with n_iter=10.
 
 
@@ -355,5 +356,13 @@ for i in range(1, 40):
 print(f"Highest accuracy: {highest_score:.4f} with n_iter={highest_iter}")
 
 # %% [markdown]
+# For implementation of the log loss algorithm we separated the equation from the clarification document into three steps:
+# 1. Compute the score as the dot product of the input features and the weight vector.
+# 2. Compute the step as the product of the learning rate, the output label, and the input features, divided by (1 + exp(y * score)).
+# 3. Update the weight vector by first applying regularization to the old weight vector, and then adding the step.
+
 # The highest accuracy we got was 0.8347 with n_iter=35
 # In this case we see significant improvements with further iterations compared to the hinge loss.
+# Where the hinge loss performance peaked at n_iter=15,
+# the logistic regression performance continued to improve up to n_iter=35.
+# The overall accuracy is higher than with hinge loss as well.
